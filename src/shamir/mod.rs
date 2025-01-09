@@ -12,6 +12,7 @@ pub use share::Share;
 pub struct Shamir(pub u8);
 
 impl Shamir {
+    /// Returns `k`, the minimum number of shares required to recover the secret.
     pub fn k(&self) -> u8 {
         self.0
     }
@@ -40,10 +41,12 @@ impl Shamir {
         rng: &mut R,
     ) -> impl Iterator<Item = Share> {
         let mut polys = Vec::with_capacity(secret.len());
+        let checksum = crc32fast::hash(secret).to_be_bytes();
+        let secret_with_checksum = [secret, &checksum].concat();
 
         // Generate a random polynomial for each byte chunk in the secret
-        for chunk in secret {
-            polys.push(poly::random_polynomial(GF256(*chunk), self.k(), rng))
+        for chunk in secret_with_checksum {
+            polys.push(poly::random_polynomial(GF256(chunk), self.k(), rng))
         }
 
         poly::evaluator(polys)
@@ -114,16 +117,23 @@ impl Shamir {
         }
 
         if keys.is_empty() || (keys.len() < self.k() as usize) {
-            Err("Not enough shares to recover original secret".to_string())
+            return Err("Not enough shares to recover original secret".to_string());
+        }
+
+        let mut secret = poly::interpolate(values.as_slice());
+        let checksum = secret.split_off(secret.len() - 4);
+
+        if crc32fast::hash(&secret).to_be_bytes().as_slice() != checksum {
+            return Err("Invalid checksum".to_string());
         } else {
-            Ok(poly::interpolate(values.as_slice()))
+            Ok(secret)
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{Shamir, Share};
+    use super::{Shamir, Share, GF256};
 
     impl Shamir {
         #[cfg(not(feature = "std"))]
@@ -143,7 +153,7 @@ mod tests {
     #[test]
     fn test_insufficient_shares_err() {
         let shamir = Shamir(255);
-        let shares: Vec<Share> = shamir.make_shares(&[1]).take(254).collect();
+        let shares: Vec<Share> = shamir.make_shares(b"Hello world!").take(254).collect();
         let secret = shamir.recover(&shares);
         assert!(secret.is_err());
     }
@@ -151,7 +161,7 @@ mod tests {
     #[test]
     fn test_duplicate_shares_err() {
         let shamir = Shamir(255);
-        let mut shares: Vec<Share> = shamir.make_shares(&[1]).take(255).collect();
+        let mut shares: Vec<Share> = shamir.make_shares(b"Hello world!").take(255).collect();
         shares[1] = Share {
             x: shares[0].x.clone(),
             y: shares[0].y.clone(),
@@ -161,10 +171,19 @@ mod tests {
     }
 
     #[test]
+    fn test_checksum_err() {
+        let shamir = Shamir(255);
+        let mut shares: Vec<Share> = shamir.make_shares(b"Hello world").take(255).collect();
+        shares[0].y[0] = shares[0].y[0].clone() + GF256(1);
+        let secret = shamir.recover(&shares);
+        assert!(secret.is_err());
+    }
+
+    #[test]
     fn test_integration_works() {
         let shamir = Shamir(255);
-        let shares: Vec<Share> = shamir.make_shares(&[1, 2, 3, 4]).take(255).collect();
+        let shares: Vec<Share> = shamir.make_shares(b"Hello world!").take(255).collect();
         let secret = shamir.recover(&shares).unwrap();
-        assert_eq!(secret, vec![1, 2, 3, 4]);
+        assert_eq!(secret, b"Hello world!");
     }
 }
