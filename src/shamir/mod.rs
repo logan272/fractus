@@ -12,6 +12,10 @@ pub use share::Share;
 pub struct Shamir(pub u8);
 
 impl Shamir {
+    pub fn k(&self) -> u8 {
+        self.0
+    }
+
     /// This method is useful when `std` is not available. For typical usage
     /// see the `dealer` method.
     ///
@@ -39,7 +43,7 @@ impl Shamir {
 
         // Generate a random polynomial for each byte chunk in the secret
         for chunk in secret {
-            polys.push(poly::random_polynomial(GF256(*chunk), self.0, rng))
+            polys.push(poly::random_polynomial(GF256(*chunk), self.k(), rng))
         }
 
         poly::evaluator(polys)
@@ -84,7 +88,7 @@ impl Shamir {
     /// // Not enough shares to recover secret
     /// assert!(secret.is_err());
     /// ```
-    pub fn recover<'a, T>(&self, shares: T) -> Result<Vec<u8>, &str>
+    pub fn recover<'a, T>(&self, shares: T) -> Result<Vec<u8>, String>
     where
         T: IntoIterator<Item = &'a Share>,
         T::IntoIter: Iterator<Item = &'a Share>,
@@ -99,15 +103,18 @@ impl Shamir {
             }
 
             if Some(share.y.len()) != len {
-                return Err("All shares must have the same length");
-            } else {
-                keys.insert(share.x.0);
-                values.push(share.clone());
+                return Err("All shares must have the same length".to_string());
             }
+
+            if !keys.insert(share.x.0) {
+                return Err(format!("Duplicated shares, x: {}", share.x.0));
+            }
+
+            values.push(share.clone());
         }
 
-        if keys.is_empty() || (keys.len() < self.0 as usize) {
-            Err("Not enough shares to recover original secret")
+        if keys.is_empty() || (keys.len() < self.k() as usize) {
+            Err("Not enough shares to recover original secret".to_string())
         } else {
             Ok(poly::interpolate(values.as_slice()))
         }
