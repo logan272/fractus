@@ -1,17 +1,21 @@
-mod field;
+mod gf256;
 mod poly;
 mod share;
 
 use hashbrown::HashSet;
 
-use field::GF256;
+use gf256::GF256;
 pub use share::Share;
 
 /// Tuple struct which implements methods to generate shares and recover secrets over a 256 bits Galois Field.
 /// Its only parameter is the minimum shares threshold.
-pub struct Shamir(pub u8);
+pub struct Shamir(u8);
 
 impl Shamir {
+    pub fn new(k: u8) -> Self {
+        Self(k)
+    }
+
     /// Returns `k`, the minimum number of shares required to recover the secret.
     pub fn k(&self) -> u8 {
         self.0
@@ -152,7 +156,7 @@ mod tests {
 
     #[test]
     fn test_insufficient_shares_err() {
-        let shamir = Shamir(255);
+        let shamir = Shamir::new(255);
         let shares: Vec<Share> = shamir.make_shares(b"Hello world!").take(254).collect();
         let secret = shamir.recover(&shares);
         assert!(secret.is_err());
@@ -160,7 +164,7 @@ mod tests {
 
     #[test]
     fn test_duplicate_shares_err() {
-        let shamir = Shamir(255);
+        let shamir = Shamir::new(255);
         let mut shares: Vec<Share> = shamir.make_shares(b"Hello world!").take(255).collect();
         shares[1] = Share {
             x: shares[0].x.clone(),
@@ -172,7 +176,7 @@ mod tests {
 
     #[test]
     fn test_checksum_err() {
-        let shamir = Shamir(255);
+        let shamir = Shamir::new(255);
         let mut shares: Vec<Share> = shamir.make_shares(b"Hello world").take(255).collect();
         shares[0].y[0] = shares[0].y[0].clone() + GF256(1);
         let secret = shamir.recover(&shares);
@@ -181,7 +185,7 @@ mod tests {
 
     #[test]
     fn test_integration_works() {
-        let shamir = Shamir(255);
+        let shamir = Shamir::new(255);
         let shares: Vec<Share> = shamir.make_shares(b"Hello world!").take(255).collect();
         let secret = shamir.recover(&shares).unwrap();
         assert_eq!(secret, b"Hello world!");

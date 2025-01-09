@@ -1,6 +1,6 @@
 use rand::distributions::{Distribution, Uniform};
 
-use super::field::GF256;
+use super::gf256::GF256;
 use super::share::Share;
 
 /// Finds the [root of the Lagrange polynomial](https://en.wikipedia.org/wiki/Shamir%27s_Secret_Sharing#Computationally_efficient_approach).

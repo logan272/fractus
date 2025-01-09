@@ -1,4 +1,4 @@
-use super::field::GF256;
+use super::gf256::GF256;
 
 #[derive(Clone, Debug)]
 pub struct Share {
