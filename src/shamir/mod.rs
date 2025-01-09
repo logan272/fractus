@@ -7,6 +7,8 @@ use hashbrown::HashSet;
 use field::GF256;
 pub use share::Share;
 
+/// Tuple struct which implements methods to generate shares and recover secrets over a 256 bits Galois Field.
+/// Its only parameter is the minimum shares threshold.
 pub struct Shamir(pub u8);
 
 impl Shamir {
@@ -19,14 +21,15 @@ impl Shamir {
     ///
     /// Example:
     /// ```
-    /// # use shamir::{Shamir, Share};
-    /// # use rand_chacha::rand_core::SeedableRng;
-    /// # let shamir = Shamir(3);
+    /// use shamir::{Shamir, Share};
+    /// use rand_chacha::rand_core::SeedableRng;
+    /// let shamir = Shamir(3);
     /// // Obtain an iterator over the shares for secret [1, 2]
     /// let mut rng = rand_chacha::ChaCha8Rng::from_seed([0x90; 32]);
     /// let dealer = shamir.dealer_rng(&[1, 2], &mut rng);
     /// // Get 3 shares
     /// let shares: Vec<Share> = dealer.take(3).collect();
+    /// ```
     pub fn dealer_rng<R: rand::Rng>(
         &self,
         secret: &[u8],
@@ -34,11 +37,12 @@ impl Shamir {
     ) -> impl Iterator<Item = Share> {
         let mut polys = Vec::with_capacity(secret.len());
 
+        // Generate a random polynomial for each byte chunk in the secret
         for chunk in secret {
             polys.push(poly::random_polynomial(GF256(*chunk), self.0, rng))
         }
 
-        poly::get_evaluator(polys)
+        poly::evaluator(polys)
     }
 
     /// Given a `secret` byte slice, returns an `Iterator` along new shares.
@@ -46,12 +50,13 @@ impl Shamir {
     ///
     /// Example:
     /// ```
-    /// # use shamir::{Shamir, Share};
-    /// # let shamir = Shamir(3);
+    /// use shamir::{Shamir, Share};
+    /// let shamir = Shamir(3);
     /// // Obtain an iterator over the shares for secret [1, 2]
     /// let dealer = shamir.dealer(&[1, 2]);
     /// // Get 3 shares
     /// let shares: Vec<Share> = dealer.take(3).collect();
+    /// ```
     #[cfg(feature = "std")]
     pub fn dealer(&self, secret: &[u8]) -> impl Iterator<Item = Share> {
         let mut rng = rand::thread_rng();
@@ -64,11 +69,11 @@ impl Shamir {
     ///
     /// Example:
     /// ```
-    /// # use shamir::{Shamir, Share};
-    /// # use rand_chacha::rand_core::SeedableRng;
-    /// # let shamir = Shamir(3);
-    /// # let mut rng = rand_chacha::ChaCha8Rng::from_seed([0x90; 32]);
-    /// # let mut shares: Vec<Share> = shamir.dealer_rng(&[1], &mut rng).take(3).collect();
+    /// use shamir::{Shamir, Share};
+    /// use rand_chacha::rand_core::SeedableRng;
+    /// let shamir = Shamir(3);
+    /// let mut rng = rand_chacha::ChaCha8Rng::from_seed([0x90; 32]);
+    /// let mut shares: Vec<Share> = shamir.dealer_rng(&[1], &mut rng).take(3).collect();
     /// // Recover original secret from shares
     /// let mut secret = shamir.recover(&shares);
     /// // Secret correctly recovered
@@ -78,21 +83,22 @@ impl Shamir {
     /// secret = shamir.recover(&shares);
     /// // Not enough shares to recover secret
     /// assert!(secret.is_err());
+    /// ```
     pub fn recover<'a, T>(&self, shares: T) -> Result<Vec<u8>, &str>
     where
         T: IntoIterator<Item = &'a Share>,
         T::IntoIter: Iterator<Item = &'a Share>,
     {
-        let mut share_length: Option<usize> = None;
+        let mut len: Option<usize> = None;
         let mut keys: HashSet<u8> = HashSet::new();
         let mut values: Vec<Share> = Vec::new();
 
         for share in shares.into_iter() {
-            if share_length.is_none() {
-                share_length = Some(share.y.len());
+            if len.is_none() {
+                len = Some(share.y.len());
             }
 
-            if Some(share.y.len()) != share_length {
+            if Some(share.y.len()) != len {
                 return Err("All shares must have the same length");
             } else {
                 keys.insert(share.x.0);

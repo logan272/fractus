@@ -4,7 +4,7 @@ use super::field::GF256;
 use super::share::Share;
 
 /// Finds the [root of the Lagrange polynomial](https://en.wikipedia.org/wiki/Shamir%27s_Secret_Sharing#Computationally_efficient_approach).
-/// The expected `shares` argument format is the same as the output by the `get_evaluator´ function.
+/// The expected `shares` argument format is the same as the output by the `evaluator´ function.
 /// Where each (key, value) pair corresponds to one share, where the key is the `x` and the value is a vector of `y`,
 /// where each element corresponds to one of the secret's byte chunks.
 pub fn interpolate(shares: &[Share]) -> Vec<u8> {
@@ -36,6 +36,7 @@ pub fn random_polynomial<R: rand::Rng>(s: GF256, k: u8, rng: &mut R) -> Vec<GF25
     for _ in 1..k {
         poly.push(GF256(between.sample(rng)));
     }
+
     poly.push(s);
 
     poly
@@ -45,13 +46,29 @@ pub fn random_polynomial<R: rand::Rng>(s: GF256, k: u8, rng: &mut R) -> Vec<GF25
 /// Each item of the iterator is a tuple `(x, [f_1(x), f_2(x)..])` where each `f_i` is the result for the ith polynomial.
 /// Each polynomial corresponds to one byte chunk of the original secret.
 /// The iterator will start at `x = 1` and end at `x = 255`.
-pub fn get_evaluator(polys: Vec<Vec<GF256>>) -> impl Iterator<Item = Share> {
+pub fn evaluator(polys: Vec<Vec<GF256>>) -> impl Iterator<Item = Share> {
     (1..=u8::MAX).map(GF256).map(move |x| Share {
         x: x.clone(),
         y: polys
             .iter()
-            .map(|p| {
-                p.iter()
+            .map(|poly| {
+                // Evaluate the polynomial at  `x`
+                // Example:
+                //  F(x) = ax^4 + bx^3 + cx^2 + dx + s
+                //  F(x) is represented as vec![a, b, c, d s]
+                //  a, b, c, d is the polynomial coefficients
+                //  s is the secret byte
+                //
+                //  acc = 0
+                //  acc = 0x + a = a                    // first iteration
+                //  acc = ax + b                        // second iteration
+                //  acc = (ax + b)x + c                 // third iteration
+                //      = ax^2 + bx + c
+                //  acc = (ax^2 + bx + c)x + d          // fourth iteration
+                //      = ax^3 + bx^2 + cx + d
+                //  acc = (ax^3 + bx^2 + cx + d)x + s   // fifth iteration
+                //      = ax^4 + bx^3 + cx^2 + dx + s
+                poly.iter()
                     .fold(GF256(0), |acc, c| acc * x.clone() + c.clone())
             })
             .collect(),
@@ -60,7 +77,7 @@ pub fn get_evaluator(polys: Vec<Vec<GF256>>) -> impl Iterator<Item = Share> {
 
 #[cfg(test)]
 mod tests {
-    use super::{get_evaluator, interpolate, random_polynomial, Share, GF256};
+    use super::{evaluator, interpolate, random_polynomial, Share, GF256};
     use rand_chacha::rand_core::SeedableRng;
 
     #[test]
@@ -73,7 +90,7 @@ mod tests {
 
     #[test]
     fn evaluator_works() {
-        let iter = get_evaluator(vec![vec![GF256(3), GF256(2), GF256(5)]]);
+        let iter = evaluator(vec![vec![GF256(3), GF256(2), GF256(5)]]);
         let values: Vec<_> = iter.take(2).map(|s| (s.x.clone(), s.y.clone())).collect();
         assert_eq!(
             values,
@@ -85,7 +102,7 @@ mod tests {
     fn interpolate_works() {
         let mut rng = rand_chacha::ChaCha8Rng::from_seed([0x90; 32]);
         let poly = random_polynomial(GF256(185), 10, &mut rng);
-        let iter = get_evaluator(vec![poly]);
+        let iter = evaluator(vec![poly]);
         let shares: Vec<Share> = iter.take(10).collect();
         let root = interpolate(&shares);
         assert_eq!(root, vec![185]);
