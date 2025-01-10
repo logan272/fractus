@@ -1,0 +1,7 @@
+[package]
+name = "xsss"
+edition.workspace = true
+version.workspace = true
+
+[dependencies]
+shamir = { workspace = true }

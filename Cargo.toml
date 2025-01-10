@@ -1,16 +1,13 @@
-[package]
-name = "s3signer"
+[workspace]
+members = ["crates/*"]
+resolver = "2"
+
+[workspace.package]
 version = "0.1.0"
 edition = "2021"
 
-[features]
-default = ["std"]
-std = ["rand/std", "rand/std_rng"]
+[workspace.dependencies]
+shamir = { path = "crates/shamir" }
 
-[dependencies]
-crc32fast = "1.4.2"
-hashbrown = "0.15.2"
-rand = { version = "0.8.5", default-features = false }
-
-[dev-dependencies]
-rand_chacha = "0.3.1"
+[workspace.lints.rust]
+[workspace.lints.clippy]

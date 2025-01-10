@@ -1,5 +1,3 @@
-mod shamir;
-
 use shamir::{Shamir, Share};
 
 fn main() {

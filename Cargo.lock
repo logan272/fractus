@@ -127,7 +127,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "s3signer"
+name = "server"
+version = "0.1.0"
+
+[[package]]
+name = "shamir"
 version = "0.1.0"
 dependencies = [
  "crc32fast",
@@ -158,6 +162,13 @@ name = "wasi"
 version = "0.11.0+wasi-snapshot-preview1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9c8d87e72b64a3b4db28d11ce29237c246188f4f51057d65a7eab63b7987e423"
+
+[[package]]
+name = "xsss"
+version = "0.1.0"
+dependencies = [
+ "shamir",
+]
 
 [[package]]
 name = "zerocopy"

@@ -32,7 +32,7 @@ impl Shamir {
     /// ```
     /// use shamir::{Shamir, Share};
     /// use rand_chacha::rand_core::SeedableRng;
-    /// let shamir = Shamir(3);
+    /// let shamir = Shamir::new(3);
     /// // Obtain an iterator over the shares for secret [1, 2]
     /// let mut rng = rand_chacha::ChaCha8Rng::from_seed([0x90; 32]);
     /// let dealer = shamir.dealer_rng(&[1, 2], &mut rng);
@@ -62,7 +62,7 @@ impl Shamir {
     /// Example:
     /// ```
     /// use shamir::{Shamir, Share};
-    /// let shamir = Shamir(3);
+    /// let shamir = Shamir::new(3);
     /// // Obtain an iterator over the shares for secret [1, 2]
     /// let dealer = shamir.dealer(&[1, 2]);
     /// // Get 3 shares
@@ -82,18 +82,14 @@ impl Shamir {
     /// ```
     /// use shamir::{Shamir, Share};
     /// use rand_chacha::rand_core::SeedableRng;
-    /// let shamir = Shamir(3);
+    /// let shamir = Shamir::new(3);
     /// let mut rng = rand_chacha::ChaCha8Rng::from_seed([0x90; 32]);
-    /// let mut shares: Vec<Share> = shamir.dealer_rng(&[1], &mut rng).take(3).collect();
+    /// let mut shares: Vec<Share> = shamir.dealer_rng(b"Hello world!", &mut rng).take(3).collect();
     /// // Recover original secret from shares
     /// let mut secret = shamir.recover(&shares);
     /// // Secret correctly recovered
     /// assert!(secret.is_ok());
-    /// // Remove shares for demonstration purposes
-    /// shares.clear();
-    /// secret = shamir.recover(&shares);
-    /// // Not enough shares to recover secret
-    /// assert!(secret.is_err());
+    /// assert_eq!(&secret.unwrap(), b"Hello world!");
     /// ```
     pub fn recover<'a, T>(&self, shares: T) -> Result<Vec<u8>, String>
     where
