@@ -9,6 +9,7 @@ pub use share::Share;
 
 /// Tuple struct which implements methods to generate shares and recover secrets over a 256 bits Galois Field.
 /// Its only parameter is the minimum shares threshold.
+#[derive(Debug, Clone)]
 pub struct Shamir(u8);
 
 impl Shamir {
@@ -163,7 +164,7 @@ mod tests {
         let shamir = Shamir::new(255);
         let mut shares: Vec<Share> = shamir.make_shares(b"Hello world!").take(255).collect();
         shares[1] = Share {
-            x: shares[0].x.clone(),
+            x: shares[0].x,
             y: shares[0].y.clone(),
         };
         let secret = shamir.recover(&shares);
@@ -173,8 +174,8 @@ mod tests {
     #[test]
     fn test_checksum_err() {
         let shamir = Shamir::new(255);
-        let mut shares: Vec<Share> = shamir.make_shares(b"Hello world").take(255).collect();
-        shares[0].y[0] = shares[0].y[0].clone() + GF256(1);
+        let mut shares: Vec<Share> = shamir.make_shares(b"Hello world!").take(255).collect();
+        shares[0].y[0] = shares[0].y[0] + GF256(1);
         let secret = shamir.recover(&shares);
         assert!(secret.is_err());
     }

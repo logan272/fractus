@@ -2,4 +2,5 @@ ignoreWords: []
 words:
   - chacha
   - hashbrown
+  - repr
   - shamir

@@ -9,16 +9,17 @@ use super::share::Share;
 /// where each element corresponds to one of the secret's byte chunks.
 pub fn interpolate(shares: &[Share]) -> Vec<u8> {
     (0..shares[0].y.len())
-        .map(|s| {
+        .map(|i| {
             shares
                 .iter()
-                .map(|s_i| {
-                    shares
+                .map(|sj| {
+                    let prod = shares
                         .iter()
-                        .filter(|s_j| s_j.x != s_i.x)
-                        .map(|s_j| s_j.x.clone() / (s_j.x.clone() - s_i.x.clone()))
-                        .product::<GF256>()
-                        * s_i.y[s].clone()
+                        .filter(|sk| sk.x != sj.x)
+                        .map(|sk| sk.x / (sk.x - sj.x))
+                        .product::<GF256>();
+
+                    prod * sj.y[i]
                 })
                 .sum::<GF256>()
                 .0
@@ -48,7 +49,7 @@ pub fn random_polynomial<R: rand::Rng>(s: GF256, k: u8, rng: &mut R) -> Vec<GF25
 /// The iterator will start at `x = 1` and end at `x = 255`.
 pub fn evaluator(polys: Vec<Vec<GF256>>) -> impl Iterator<Item = Share> {
     (1..=u8::MAX).map(GF256).map(move |x| Share {
-        x: x.clone(),
+        x,
         y: polys
             .iter()
             .map(|poly| {
@@ -68,8 +69,7 @@ pub fn evaluator(polys: Vec<Vec<GF256>>) -> impl Iterator<Item = Share> {
                 //      = ax^3 + bx^2 + cx + d
                 //  acc = (ax^3 + bx^2 + cx + d)x + s   // fifth iteration
                 //      = ax^4 + bx^3 + cx^2 + dx + s
-                poly.iter()
-                    .fold(GF256(0), |acc, c| acc * x.clone() + c.clone())
+                poly.iter().fold(GF256(0), |acc, c| acc * x + *c)
             })
             .collect(),
     })
@@ -91,7 +91,7 @@ mod tests {
     #[test]
     fn evaluator_works() {
         let iter = evaluator(vec![vec![GF256(3), GF256(2), GF256(5)]]);
-        let values: Vec<_> = iter.take(2).map(|s| (s.x.clone(), s.y.clone())).collect();
+        let values: Vec<_> = iter.take(2).map(|s| (s.x, s.y)).collect();
         assert_eq!(
             values,
             vec![(GF256(1), vec![GF256(4)]), (GF256(2), vec![GF256(13)])]
