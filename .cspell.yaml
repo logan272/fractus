@@ -1,6 +1,12 @@
 ignoreWords: []
 words:
   - chacha
+  - dotenv
+  - dotenvy
   - hashbrown
+  - PGPASSWORD
   - repr
+  - serde
   - shamir
+  - sqlx
+  - thiserror

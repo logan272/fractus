@@ -1,0 +1,23 @@
+services:
+  postgres:
+    container_name: sss-postgres
+    image: 'postgres:15-alpine'
+    environment:
+      POSTGRES_USER: '${PGUSER:-postgres}'
+      POSTGRES_PASSWORD: '${PGPASSWORD:-postgres}'
+    ports:
+      - '${PGPORT:-5432}:5432'
+    volumes:
+      - ./.cache/postgres/data:/var/lib/postgresql/data
+
+  sqlpad:
+    container_name: sss-sqlpad
+    image: 'sqlpad/sqlpad:7.5.2'
+    restart: always
+    ports:
+      - 3002:3000
+    environment:
+      - SQLPAD_ADMIN=admin
+      - SQLPAD_ADMIN_PASSWORD=admin
+    volumes:
+      - ./.cache/sqlpad:/var/lib/sqlpad

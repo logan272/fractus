@@ -1,9 +1,10 @@
 [package]
-name = "server"
+name = "sss-cli"
 version.workspace = true
 edition.workspace = true
 
 [dependencies]
+shamir = { workspace = true }
 
 [lints]
 workspace = true
