@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 
-use axum::{routing::get, Extension, Json, Router};
+use axum::http::StatusCode;
+use axum::{extract::Query, routing::get, Extension, Json, Router};
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 use time::{format_description::well_known::Rfc3339, OffsetDateTime};
@@ -14,7 +15,7 @@ mod share;
 
 pub fn router() -> Router {
     Router::new()
-        .route("/v1/secret", get(get_secrets).post(create_secret))
+        .route("/v1/secret", get(get_secret).post(create_secret))
         .merge(share::router())
 }
 
@@ -58,7 +59,7 @@ struct CreateSecretResponse {
 async fn create_secret(
     db: Extension<PgPool>,
     Json(req): Json<CreateSecretRequest>,
-) -> Result<Json<CreateSecretResponse>> {
+) -> Result<(StatusCode, Json<CreateSecretResponse>)> {
     req.validate()?;
     let user_id = req.auth.verify(&*db).await?;
     let nonce = req.secret.map_or(0, |_| 1);
@@ -120,21 +121,30 @@ async fn create_secret(
 
     tx.commit().await?;
 
-    Ok(Json(CreateSecretResponse { secret, shares }))
+    Ok((
+        StatusCode::CREATED,
+        Json(CreateSecretResponse { secret, shares }),
+    ))
 }
 
-async fn get_secrets(db: Extension<PgPool>) -> Result<Json<Vec<Secret>>> {
-    let posts = sqlx::query_as!(
+#[derive(Deserialize)]
+struct SecretQuery {
+    label: String,
+}
+
+async fn get_secret(db: Extension<PgPool>, Query(sq): Query<SecretQuery>) -> Result<Json<Secret>> {
+    let secret = sqlx::query_as!(
         Secret,
         r#"
             SELECT s.id, u.email, s.label, s.created_at, s.n, s.k
             FROM secret s
             JOIN "user" u ON s.creator_id = u.id
-            ORDER BY created_at DESC
-        "#
+            where s.label = $1
+        "#,
+        sq.label
     )
-    .fetch_all(&*db)
+    .fetch_one(&*db)
     .await?;
 
-    Ok(Json(posts))
+    Ok(Json(secret))
 }

@@ -2,6 +2,7 @@ use anyhow::Context;
 use axum::{Extension, Router};
 use sqlx::PgPool;
 use std::env;
+use tokio::net::TcpListener;
 
 mod error;
 mod secret;
@@ -22,7 +23,7 @@ pub async fn serve(db: PgPool) -> anyhow::Result<()> {
     let host = env::var("HOST").unwrap_or("127.0.0.1".to_owned());
     let port = env::var("PORT").map_or(3000, |p| p.parse().expect("PORT must be a number"));
     let server_url = format!("{}:{}", host, port);
-    let listener = tokio::net::TcpListener::bind(&server_url).await.unwrap();
+    let listener = TcpListener::bind(&server_url).await.unwrap();
 
     println!("Listening on: http://{}", server_url);
     axum::serve(listener, app(db).into_make_service())
