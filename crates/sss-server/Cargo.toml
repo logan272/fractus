@@ -30,6 +30,7 @@ time = { version = "0.3.37" }
 serde_with = { version = "3.12.0", features = ["time_0_3"] }
 regex = "1.11.1"
 once_cell = "1.20.2"
+tower-http = { version = "0.6.2", features = ["cors"] }
 
 [lints]
 workspace = true

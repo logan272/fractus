@@ -3,6 +3,7 @@ use axum::{Extension, Router};
 use sqlx::PgPool;
 use std::env;
 use tokio::net::TcpListener;
+use tower_http::cors;
 
 mod error;
 mod secret;
@@ -16,6 +17,7 @@ fn app(db: PgPool) -> Router {
     Router::new()
         .merge(user::router())
         .merge(secret::router())
+        .layer(cors::CorsLayer::new().allow_origin(cors::Any))
         .layer(Extension(db))
 }
 
