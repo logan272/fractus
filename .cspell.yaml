@@ -6,6 +6,7 @@ words:
   - hashbrown
   - PGPASSWORD
   - repr
+  - reqwest
   - serde
   - shamir
   - sqlx
