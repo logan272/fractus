@@ -26,19 +26,20 @@ pub struct Share {
 pub async fn create_shares(
     tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
     secret_id: Uuid,
-    keepers: &[Uuid],
+    keepers: Vec<Uuid>,
+    shares_data: Option<Vec<String>>,
     nonce: i64,
 ) -> Result<Vec<Share>> {
     let mut shares = Vec::with_capacity(keepers.len());
 
-    for keeper in keepers {
+    for (idx, keeper) in keepers.iter().enumerate() {
         let share = sqlx::query_as!(
             Share,
             r#"
                 WITH inserted_share AS (
-                    INSERT INTO share(keeper_id, secret_id, secret_nonce)
-                    VALUES ($1, $2, $3)
-                    RETURNING id, keeper_id, secret_id, updated_at, created_at
+                    INSERT INTO share(keeper_id, secret_id, share_data, secret_nonce)
+                    VALUES ($1, $2, $3, $4)
+                    RETURNING id, keeper_id, secret_id, updated_at, created_at 
                 )
                 SELECT s.id, u.email, secret.label as secret_label, s.updated_at, s.created_at
                 FROM inserted_share s
@@ -47,7 +48,8 @@ pub async fn create_shares(
             "#,
             keeper,
             secret_id,
-            nonce,
+            shares_data.as_ref().map(|data| &data[idx]),
+            nonce
         )
         .fetch_one(&mut **tx)
         .await?;

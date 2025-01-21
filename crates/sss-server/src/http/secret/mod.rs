@@ -2,7 +2,9 @@ use std::collections::HashSet;
 
 use axum::http::StatusCode;
 use axum::{extract::Query, routing::get, Extension, Json, Router};
+use hex;
 use serde::{Deserialize, Serialize};
+use shamir::{self, Shamir};
 use sqlx::PgPool;
 use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 use uuid::Uuid;
@@ -62,8 +64,8 @@ async fn create_secret(
 ) -> Result<(StatusCode, Json<CreateSecretResponse>)> {
     req.validate()?;
     let user_id = req.auth.verify(&*db).await?;
-    let nonce = req.secret.map_or(0, |_| 1);
     let keepers_len = req.keepers.len();
+    let nonce = req.secret.as_ref().map_or(0, |_| 1);
     let keepers = req.keepers.into_iter().collect::<HashSet<_>>();
 
     if keepers.len() != keepers_len {
@@ -94,6 +96,14 @@ async fn create_secret(
         )));
     }
 
+    let shares_data = req.secret.as_ref().map(|s| {
+        Shamir::new(u8::try_from(req.k).unwrap())
+            .dealer(s.as_bytes())
+            .take(usize::try_from(req.n).unwrap())
+            .map(|s| hex::encode(Vec::from(&s)))
+            .collect::<Vec<_>>()
+    });
+
     let mut tx = db.begin().await?;
 
     let secret = sqlx::query_as!(
@@ -117,7 +127,7 @@ async fn create_secret(
     .fetch_one(&mut *tx)
     .await?;
 
-    let shares = share::create_shares(&mut tx, secret.id, &keeper_ids, nonce).await?;
+    let shares = share::create_shares(&mut tx, secret.id, keeper_ids, shares_data, nonce).await?;
 
     tx.commit().await?;
 
