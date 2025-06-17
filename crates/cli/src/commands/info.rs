@@ -211,7 +211,7 @@ impl InfoCommand {
     }
 
     fn output_table(&self, info: &ShareSetInfo) {
-        println!("📊 Share Set Information");
+        println!("Share Set Information");
         println!("━━━━━━━━━━━━━━━━━━━━━━━━━");
 
         println!("Total shares: {}", info.total_shares);
@@ -235,7 +235,7 @@ impl InfoCommand {
         }
 
         if self.detailed && !info.shares.is_empty() {
-            println!("\n📋 Individual Shares:");
+            println!("\nIndividual Shares:");
             println!("┌─────┬─────────────┬──────────┬───────────┬─────────────┬──────────┐");
             println!("│ ID  │ X-Coord     │ Y-Length │ Threshold │ Total       │ Format   │");
             println!("├─────┼─────────────┼──────────┼───────────┼─────────────┼──────────┤");
@@ -257,7 +257,7 @@ impl InfoCommand {
         }
 
         // Recovery status
-        println!("\n🔍 Recovery Status:");
+        println!("\nRecovery Status:");
         if let Some(threshold) = info.inferred_threshold {
             if info.unique_x_coordinates >= threshold as usize {
                 println!(

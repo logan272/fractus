@@ -104,7 +104,7 @@ impl SplitCommand {
                 self.shares, self.threshold
             );
             if let Some(dir) = &self.output_dir {
-                println!("📁 Shares saved to: {}", dir.display());
+                println!("Shares saved to: {}", dir.display());
             }
         }
 
@@ -122,10 +122,6 @@ impl SplitCommand {
                 self.shares,
                 self.threshold
             );
-        }
-
-        if self.shares > 255 {
-            bail!("Maximum number of shares is 255");
         }
 
         // Check for conflicting input options

@@ -210,7 +210,7 @@ impl RecoverCommand {
         original_shares: &[Share],
         threshold: u8,
     ) -> Result<()> {
-        println!("🔍 Verifying recovery...");
+        println!("Verifying recovery...");
 
         let shamir = Shamir::new(threshold)?;
         let verification_shares: Vec<Share> =
