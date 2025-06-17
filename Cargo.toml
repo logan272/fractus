@@ -7,30 +7,6 @@ version = "0.1.0"
 edition = "2021"
 
 [workspace.dependencies]
-shamir = { path = "crates/shamir" }
-axum = "0.8.1"
-tower = "0.5.2"
-reqwest = { version = "0.12.12", features = ["json"] }
-serde = { version = "1.0.0", features = ["derive"] }
-serde_json = "1.0"
-tokio = { version = "1.43.0", features = ["full"] }
-anyhow = { version = "1.0.0" }
-thiserror = "2.0.0"
-tracing = "0.1.41"
-tracing-subscriber = "0.3.19"
-dotenvy = "0.15.7"
-
+fractus-shamir = { path = "crates/shamir" }
 [workspace.lints.rust]
 [workspace.lints.clippy]
-
-[profile]
-
-[profile.wasm-dev]
-inherits = "dev"
-opt-level = 1
-
-[profile.server-dev]
-inherits = "dev"
-
-[profile.android-dev]
-inherits = "dev"
