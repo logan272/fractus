@@ -74,7 +74,7 @@ impl Shamir {
     ///
     /// # Examples
     /// ```
-    /// use shamir::Shamir;
+    /// use fractus_shamir::Shamir;
     /// let shamir = Shamir::new(3).unwrap();
     /// assert_eq!(shamir.threshold(), 3);
     /// ```
@@ -110,7 +110,7 @@ impl Shamir {
     ///
     /// # Examples
     /// ```
-    /// use shamir::Shamir;
+    /// use fractus_shamir::Shamir;
     /// use rand_chacha::rand_core::SeedableRng;
     ///
     /// let shamir = Shamir::new(3).unwrap();
@@ -149,7 +149,7 @@ impl Shamir {
     ///
     /// # Examples
     /// ```
-    /// use shamir::Shamir;
+    /// use fractus_shamir::Shamir;
     ///
     /// let shamir = Shamir::new(3).unwrap();
     /// let shares: Vec<_> = shamir.split(b"Hello world!")
@@ -183,7 +183,7 @@ impl Shamir {
     ///
     /// # Examples
     /// ```
-    /// use shamir::Shamir;
+    /// use fractus_shamir::Shamir;
     /// use rand_chacha::rand_core::SeedableRng;
     ///
     /// let shamir = Shamir::new(3).unwrap();

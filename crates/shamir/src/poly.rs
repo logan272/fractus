@@ -23,8 +23,8 @@ use super::share::Share;
 ///
 /// # Examples
 /// ```
-/// use shamir::{Share, gf256::GF256};
-/// use shamir::poly::interpolate;
+/// use fractus_shamir::{Share, gf256::GF256};
+/// use fractus_shamir::poly::interpolate;
 ///
 /// let shares = vec![
 ///     Share::new(GF256(1), vec![GF256(10)]),
@@ -98,8 +98,8 @@ fn lagrange_interpolate_at_zero(shares: &[Share], byte_index: usize) -> GF256 {
 ///
 /// # Examples
 /// ```
-/// use shamir::gf256::GF256;
-/// use shamir::poly::random_polynomial;
+/// use fractus_shamir::gf256::GF256;
+/// use fractus_shamir::poly::random_polynomial;
 /// use rand_chacha::rand_core::SeedableRng;
 ///
 /// let mut rng = rand_chacha::ChaCha8Rng::from_seed([0; 32]);
@@ -144,8 +144,8 @@ pub fn random_polynomial<R: rand::Rng>(
 ///
 /// # Examples
 /// ```
-/// use shamir::gf256::GF256;
-/// use shamir::poly::{random_polynomial, evaluator};
+/// use fractus_shamir::gf256::GF256;
+/// use fractus_shamir::poly::{random_polynomial, evaluator};
 /// use rand_chacha::rand_core::SeedableRng;
 ///
 /// let mut rng = rand_chacha::ChaCha8Rng::from_seed([0; 32]);
@@ -186,8 +186,8 @@ pub fn evaluator(polys: Vec<Vec<GF256>>) -> impl Iterator<Item = Share> {
 ///
 /// # Examples
 /// ```
-/// use shamir::gf256::GF256;
-/// use shamir::poly::evaluate_polynomial;
+/// use fractus_shamir::gf256::GF256;
+/// use fractus_shamir::poly::evaluate_polynomial;
 ///
 /// // Polynomial: 2x^2 + 3x + 5
 /// let coeffs = vec![GF256(2), GF256(3), GF256(5)];
