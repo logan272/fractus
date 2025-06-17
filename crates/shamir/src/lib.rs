@@ -3,8 +3,8 @@
 //! This crate provides cryptographically secure secret sharing with integrity
 //! verification through CRC32 checksums.
 
-mod gf256;
-mod poly;
+pub mod gf256;
+pub mod poly;
 mod share;
 
 use gf256::GF256;
