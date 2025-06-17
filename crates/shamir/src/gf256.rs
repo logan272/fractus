@@ -1,6 +1,11 @@
+//! Galois Field GF(256) arithmetic implementation.
+//!
+//! This module provides efficient arithmetic operations in GF(256) using
+//! precomputed logarithm and exponential tables.
 use core::iter::{Product, Sum};
 use core::ops::{Add, Div, Mul, Sub};
 
+// Precomputed logarithm table for GF(256)
 #[rustfmt::skip]
 const GF256_LOG: [u8; 256] = [
     0xff, 0x00, 0x19, 0x01, 0x32, 0x02, 0x1a, 0xc6, 0x4b, 0xc7, 0x1b, 0x68, 0x33, 0xee, 0xdf, 0x03,
@@ -21,6 +26,7 @@ const GF256_LOG: [u8; 256] = [
     0x67, 0x4a, 0xed, 0xde, 0xc5, 0x31, 0xfe, 0x18, 0x0d, 0x63, 0x8c, 0x80, 0xc0, 0xf7, 0x70, 0x07,
 ];
 
+// Precomputed exponential table for GF(256) - duplicated for efficiency
 #[rustfmt::skip]
 const GF256_EXP: [u8; 255*2] = [
     0x01, 0x03, 0x05, 0x0f, 0x11, 0x33, 0x55, 0xff, 0x1a, 0x2e, 0x72, 0x96, 0xa1, 0xf8, 0x13, 0x35,
@@ -40,6 +46,7 @@ const GF256_EXP: [u8; 255*2] = [
     0x12, 0x36, 0x5a, 0xee, 0x29, 0x7b, 0x8d, 0x8c, 0x8f, 0x8a, 0x85, 0x94, 0xa7, 0xf2, 0x0d, 0x17,
     0x39, 0x4b, 0xdd, 0x7c, 0x84, 0x97, 0xa2, 0xfd, 0x1c, 0x24, 0x6c, 0xb4, 0xc7, 0x52, 0xf6,
 
+    // Duplicate for efficiency in table lookups
     0x01, 0x03, 0x05, 0x0f, 0x11, 0x33, 0x55, 0xff, 0x1a, 0x2e, 0x72, 0x96, 0xa1, 0xf8, 0x13, 0x35,
     0x5f, 0xe1, 0x38, 0x48, 0xd8, 0x73, 0x95, 0xa4, 0xf7, 0x02, 0x06, 0x0a, 0x1e, 0x22, 0x66, 0xaa,
     0xe5, 0x34, 0x5c, 0xe4, 0x37, 0x59, 0xeb, 0x26, 0x6a, 0xbe, 0xd9, 0x70, 0x90, 0xab, 0xe6, 0x31,
@@ -58,9 +65,71 @@ const GF256_EXP: [u8; 255*2] = [
     0x39, 0x4b, 0xdd, 0x7c, 0x84, 0x97, 0xa2, 0xfd, 0x1c, 0x24, 0x6c, 0xb4, 0xc7, 0x52, 0xf6,
 ];
 
+/// An element in the Galois Field GF(256).
+///
+/// This field is used for polynomial operations in Shamir's Secret Sharing.
+/// All arithmetic operations are performed modulo the irreducible polynomial
+/// x^8 + x^4 + x^3 + x + 1.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
 pub struct GF256(pub u8);
+
+impl GF256 {
+    /// The zero element in GF(256).
+    pub const ZERO: Self = Self(0);
+
+    /// The one element in GF(256).
+    pub const ONE: Self = Self(1);
+
+    /// Creates a new GF(256) element from a byte value.
+    #[inline]
+    pub const fn new(value: u8) -> Self {
+        Self(value)
+    }
+
+    /// Returns the underlying byte value.
+    #[inline]
+    pub const fn value(self) -> u8 {
+        self.0
+    }
+
+    /// Computes the multiplicative inverse of this element.
+    ///
+    /// # Panics
+    /// Panics if called on the zero element (which has no inverse).
+    #[inline]
+    pub fn inverse(self) -> Self {
+        assert_ne!(self.0, 0, "Zero element has no multiplicative inverse");
+        let log_val = GF256_LOG[self.0 as usize] as usize;
+        Self(GF256_EXP[255 - log_val])
+    }
+
+    /// Returns true if this is the zero element.
+    #[inline]
+    pub const fn is_zero(self) -> bool {
+        self.0 == 0
+    }
+
+    /// Returns true if this is the one element.
+    #[inline]
+    pub const fn is_one(self) -> bool {
+        self.0 == 1
+    }
+}
+
+impl From<u8> for GF256 {
+    #[inline]
+    fn from(value: u8) -> Self {
+        Self(value)
+    }
+}
+
+impl From<GF256> for u8 {
+    #[inline]
+    fn from(gf: GF256) -> u8 {
+        gf.0
+    }
+}
 
 impl std::fmt::Display for GF256 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -68,56 +137,109 @@ impl std::fmt::Display for GF256 {
     }
 }
 
+// Addition in GF(256) is XOR
 #[allow(clippy::suspicious_arithmetic_impl)]
 impl Add for GF256 {
-    type Output = GF256;
+    type Output = Self;
 
+    #[inline]
     fn add(self, other: Self) -> Self::Output {
         Self(self.0 ^ other.0)
     }
 }
 
+// Subtraction in GF(256) is the same as addition (XOR)
 #[allow(clippy::suspicious_arithmetic_impl)]
 impl Sub for GF256 {
     type Output = Self;
 
     fn sub(self, other: Self) -> Self::Output {
+        // In GF(2^n), subtraction equals addition
         self.add(other)
     }
 }
 
+// Multiplication using logarithm tables for efficiency
 impl Mul for GF256 {
     type Output = Self;
 
+    #[inline]
     fn mul(self, other: Self) -> Self::Output {
-        let x = GF256_LOG[self.0 as usize] as usize;
-        let y = GF256_LOG[other.0 as usize] as usize;
-
         if self.0 == 0 || other.0 == 0 {
-            Self(0)
+            Self::ZERO
         } else {
+            let x = GF256_LOG[self.0 as usize] as usize;
+            let y = GF256_LOG[other.0 as usize] as usize;
             Self(GF256_EXP[x + y])
         }
     }
 }
 
+// Division using logarithm tables
 impl Div for GF256 {
     type Output = Self;
 
+    #[inline]
     fn div(self, other: Self) -> Self::Output {
-        let y = GF256_LOG[other.0 as usize] as usize;
-        self.mul(GF256(GF256_EXP[255 - y]))
+        assert_ne!(other.0, 0, "Division by zero in GF(256)");
+        self.mul(other.inverse())
     }
 }
 
 impl Sum for GF256 {
     fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
-        iter.fold(Self(0), |acc, x| acc + x)
+        iter.fold(Self::ZERO, |acc, x| acc + x)
     }
 }
 
 impl Product for GF256 {
     fn product<I: Iterator<Item = Self>>(iter: I) -> Self {
-        iter.fold(Self(1), |acc, x| acc * x)
+        iter.fold(Self::ONE, |acc, x| acc * x)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_basic_arithmetic() {
+        let a = GF256(3);
+        let b = GF256(5);
+
+        // Test addition (XOR)
+        assert_eq!(a + b, GF256(6));
+
+        // Test multiplication
+        assert_eq!(a * b, GF256(15));
+
+        // Test division
+        assert_eq!(a / b, a * b.inverse());
+    }
+
+    #[test]
+    fn test_zero_multiplication() {
+        let zero = GF256::ZERO;
+        let any = GF256(42);
+
+        assert_eq!(zero * any, zero);
+        assert_eq!(any * zero, zero);
+    }
+
+    #[test]
+    fn test_one_multiplication() {
+        let one = GF256::ONE;
+        let any = GF256(42);
+
+        assert_eq!(one * any, any);
+        assert_eq!(any * one, any);
+    }
+
+    #[test]
+    #[should_panic(expected = "Division by zero")]
+    fn test_division_by_zero() {
+        let a = GF256(5);
+        let zero = GF256::ZERO;
+        let _ = a / zero;
     }
 }
