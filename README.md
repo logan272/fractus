@@ -17,10 +17,10 @@ cargo install --path crates/fractus-cli
 
 ```bash
 # Split a secret into 5 shares (need 3 to recover)
-echo "my secret password" | fractus split -t 3 -n 5
+echo "my secret password" | fractus split -k 3 -n 5
 
 # Split a file
-fractus split -t 3 -n 5 -i secret.txt -o ./shares/
+fractus split -k 3 -n 5 -i secret.txt -o ./shares/
 
 # Recover from shares
 fractus recover shares/share-*.json
@@ -36,37 +36,37 @@ fractus info shares/
 Split a secret into multiple shares using Shamir's Secret Sharing.
 
 ```bash
-fractus split -t <THRESHOLD> -n <SHARES> [OPTIONS]
+fractus split -k <THRESHOLD> -n <SHARES> [OPTIONS]
 ```
 
 #### Examples
 
 ```bash
 # Interactive secret entry (hidden input)
-fractus split -t 3 -n 5 --interactive
+fractus split -k 3 -n 5 --interactive
 
 # From file with custom output directory
-fractus split -t 2 -n 4 -i document.pdf -o /secure/shares/
+fractus split -k 2 -n 4 -i document.pdf -o /secure/shares/
 
 # From environment variable
 export SECRET_KEY="my-api-key-12345"
-fractus split -t 3 -n 7 --env-var SECRET_KEY
+fractus split -k 3 -n 7 --env-var SECRET_KEY
 
 # Output to stdout in hex format
-echo "secret" | fractus split -t 2 -n 3 --stdout -f hex
+echo "secret" | fractus split -k 2 -n 3 --stdout -f hex
 
 # Deterministic shares with custom seed
-fractus split -t 3 -n 5 -i file.txt --seed "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+fractus split -k 3 -n 5 -i file.txt --seed "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
 
 # Include metadata in output
-fractus split -t 3 -n 5 -i secret.txt --include-metadata
+fractus split -k 3 -n 5 -i secret.txt --include-metadata
 ```
 
 #### Options
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `-t, --threshold <THRESHOLD>` | Minimum shares needed for recovery | Required |
+| `-k, --threshold <THRESHOLD>` | Minimum shares needed for recovery | Required |
 | `-n, --shares <SHARES>` | Number of shares to generate | Required |
 | `-i, --input <FILE>` | Input file (use '-' for stdin) | `"-"` |
 | `-o, --output-dir <DIR>` | Output directory for share files | Current directory |
@@ -105,7 +105,7 @@ fractus recover shares/*.json -o recovered-secret.txt
 fractus recover shares/*.json --verify
 
 # Specify expected threshold for validation
-fractus recover shares/*.json -t 3
+fractus recover shares/*.json -k 3
 ```
 
 #### Options
@@ -114,7 +114,7 @@ fractus recover shares/*.json -t 3
 |--------|-------------|---------|
 | `-f, --format <FORMAT>` | Input format (auto-detect if not specified) | Auto-detect |
 | `-o, --output <FILE>` | Output file (use '-' for stdout) | `"-"` |
-| `-t, --threshold <THRESHOLD>` | Expected threshold for validation | Auto-infer |
+| `-k, --threshold <THRESHOLD>` | Expected threshold for validation | Auto-infer |
 | `--stdin` | Read shares from stdin (one per line) | `false` |
 | `--verify` | Verify recovery by re-splitting | `false` |
 
@@ -218,10 +218,10 @@ format = "json"
 
 ```bash
 # Use specific config file
-fractus split -t 2 -n 3 --config /path/to/config.toml
+fractus split -k 2 -n 3 --config /path/to/config.toml
 
 # Override config with command-line options
-fractus split -t 5 -n 8  # Overrides config defaults
+fractus split -k 5 -n 8  # Overrides config defaults
 ```
 
 ## Advanced Usage
@@ -231,7 +231,7 @@ fractus split -t 5 -n 8  # Overrides config defaults
 ```bash
 # Split multiple files
 for file in *.txt; do
-    fractus split -t 3 -n 5 -i "$file" -o "shares-$file/"
+    fractus split -k 3 -n 5 -i "$file" -o "shares-$file/"
 done
 
 # Recover multiple secrets
@@ -244,10 +244,10 @@ done
 
 ```bash
 # Generate secret and split in one command
-openssl rand -base64 32 | fractus split -t 3 -n 5 --stdout -f hex
+openssl rand -base64 32 | fractus split -k 3 -n 5 --stdout -f hex
 
 # Split and immediately test recovery
-echo "test secret" | fractus split -t 2 -n 3 --stdout | head -2 | fractus recover --stdin
+echo "test secret" | fractus split -k 2 -n 3 --stdout | head -2 | fractus recover --stdin
 ```
 
 ### Scripting
@@ -265,7 +265,7 @@ if [ ! -f "$KEY_FILE" ]; then
 fi
 
 # Split the key into 7 shares (need 4 to recover)
-fractus split -t 4 -n 7 -i "$KEY_FILE" -o "$BACKUP_DIR" --include-metadata
+fractus split -k 4 -n 7 -i "$KEY_FILE" -o "$BACKUP_DIR" --include-metadata
 
 echo "SSH key split into 7 shares in $BACKUP_DIR"
 echo "Store these shares in different secure locations"
@@ -277,11 +277,11 @@ echo "Need any 4 shares to recover the key"
 ```bash
 # Use environment variable for sensitive data
 export SECRET_DATA="$(cat sensitive-file.txt)"
-fractus split -t 3 -n 5 --env-var SECRET_DATA
+fractus split -k 3 -n 5 --env-var SECRET_DATA
 unset SECRET_DATA
 
 # Interactive input for maximum security
-fractus split -t 3 -n 5 --interactive
+fractus split -k 3 -n 5 --interactive
 
 # Verify integrity during recovery
 fractus recover shares/*.json --verify -o recovered.txt

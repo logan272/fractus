@@ -19,7 +19,7 @@ pub struct SplitCommand {
     pub shares: u8,
 
     /// Minimum threshold of shares required for recovery
-    #[arg(short = 't', long, value_name = "THRESHOLD")]
+    #[arg(short = 'k', long, value_name = "THRESHOLD")]
     pub threshold: u8,
 
     /// Input file (use '-' for stdin)

@@ -25,7 +25,7 @@ pub struct RecoverCommand {
     pub output: String,
 
     /// Expected threshold (for validation)
-    #[arg(short = 't', long, value_name = "THRESHOLD")]
+    #[arg(short = 'k', long, value_name = "THRESHOLD")]
     pub threshold: Option<u8>,
 
     /// Read shares from stdin (one per line)
