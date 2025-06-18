@@ -31,11 +31,10 @@ fractus info shares/
 
 ## Commands
 
-### `fractus split` - Split a Secret
+### `split`
 
 Split a secret into multiple shares using Shamir's Secret Sharing.
 
-#### Basic Syntax
 ```bash
 fractus split -t <THRESHOLD> -n <SHARES> [OPTIONS]
 ```
@@ -79,11 +78,10 @@ fractus split -t 3 -n 5 -i secret.txt --include-metadata
 | `--seed <HEX>` | Custom seed for deterministic generation | - |
 | `--include-metadata` | Include metadata in output | `false` |
 
-### `fractus recover` - Recover a Secret
+### `recover`
 
 Reconstruct the original secret from shares.
 
-#### Basic Syntax
 ```bash
 fractus recover <SHARES...> [OPTIONS]
 ```
@@ -120,11 +118,10 @@ fractus recover shares/*.json -t 3
 | `--stdin` | Read shares from stdin (one per line) | `false` |
 | `--verify` | Verify recovery by re-splitting | `false` |
 
-### `fractus info` - Analyze Shares
+### `info`
 
 Display detailed information about shares and their compatibility.
 
-#### Basic Syntax
 ```bash
 fractus info <SHARES...> [OPTIONS]
 ```
