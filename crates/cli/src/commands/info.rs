@@ -109,14 +109,14 @@ impl InfoCommand {
     }
 
     fn analyze_file(&self, path: &PathBuf) -> Result<(fractus_shamir::Share, ShareInfo)> {
-        let content = fs::read_to_string(path)
-            .with_context(|| format!("Failed to read file: {}", path.display()))?;
-
         let format = if let Some(f) = &self.format {
             *f
         } else {
-            InputFormat::detect(&content)?
+            InputFormat::detect_from_path(path)?
         };
+
+        let content = fs::read_to_string(path)
+            .with_context(|| format!("Failed to read file: {}", path.display()))?;
 
         let share_data = match format {
             InputFormat::Json => {

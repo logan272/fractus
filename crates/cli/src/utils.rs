@@ -37,8 +37,5 @@ pub fn validate_sharing_params(threshold: u8, shares: u8) -> Result<()> {
     if shares < threshold {
         anyhow::bail!("Number of shares must be at least the threshold");
     }
-    if shares > 255 {
-        anyhow::bail!("Maximum number of shares is 255");
-    }
     Ok(())
 }

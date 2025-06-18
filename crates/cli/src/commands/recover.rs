@@ -146,20 +146,46 @@ impl RecoverCommand {
     }
 
     fn read_share_from_file(&self, path: &PathBuf) -> Result<Share> {
-        let content = fs::read_to_string(path)
-            .with_context(|| format!("Failed to read file: {}", path.display()))?;
+        // Detect format first (if not specified)
+        let format = if let Some(f) = &self.format {
+            *f
+        } else {
+            InputFormat::detect_from_path(path)?
+        };
 
-        self.parse_share_from_string(&content)
+        match format {
+            InputFormat::Binary => {
+                // Read as bytes for binary format
+                let bytes = fs::read(path)
+                    .with_context(|| format!("Failed to read binary file: {}", path.display()))?;
+
+                self.parse_share_from_bytes(&bytes)
+            }
+            _ => {
+                // Read as string for text formats
+                let content = fs::read_to_string(path)
+                    .with_context(|| format!("Failed to read file: {}", path.display()))?;
+
+                self.parse_share_from_string(&content)
+            }
+        }
+    }
+
+    fn parse_share_from_bytes(&self, bytes: &[u8]) -> Result<Share> {
+        let share_data =
+            ShareData::from_bytes(bytes).context("Failed to parse binary share data")?;
+
+        Ok(share_data.into_share())
     }
 
     fn parse_share_from_string(&self, content: &str) -> Result<Share> {
         let content = content.trim();
 
-        // Try to determine format
+        // Try to determine format from content if not specified
         let format = if let Some(f) = &self.format {
             *f
         } else {
-            InputFormat::detect(content)?
+            InputFormat::detect_from_content(content)?
         };
 
         let share_data = match format {
@@ -169,7 +195,7 @@ impl RecoverCommand {
             InputFormat::Hex => ShareData::from_hex(content)?,
             InputFormat::Base64 => ShareData::from_base64(content)?,
             InputFormat::Binary => {
-                bail!("Binary format not supported for string input");
+                bail!("Binary format requires byte input, not string");
             }
         };
 
