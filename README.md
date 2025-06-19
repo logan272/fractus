@@ -1,6 +1,6 @@
 # Fractus
 
-A command-line interface for [Shamir's Secret Sharing](https://en.wikipedia.org/wiki/Shamir%27s_Secret_Sharing) using the [fractus-shamir](../fractus-shamir) library.
+A command-line interface for [Shamir's Secret Sharing](https://en.wikipedia.org/wiki/Shamir%27s_Secret_Sharing) using the [fractus-shamir](./crates/shamir) library.
 
 ## 🚀 Quick Start
 

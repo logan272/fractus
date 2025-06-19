@@ -1,10 +1,5 @@
 # Fractus-Shamir
 
-[[Crates.io](https://img.shields.io/crates/v/fractus-shamir.svg)](https://crates.io/crates/fractus-shamir)
-[[Documentation](https://docs.rs/fractus-shamir/badge.svg)](https://docs.rs/fractus-shamir)
-[[License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](https://github.com/logan272/fractus)
-[[Build Status](https://github.com/logan272/fractus/workflows/CI/badge.svg)](https://github.com/logan272/fractus/actions)
-
 A robust, secure, and efficient implementation of [Shamir's Secret Sharing](https://en.wikipedia.org/wiki/Shamir%27s_Secret_Sharing) in Rust.
 
 **Fractus-Shamir** allows you to split a secret into multiple shares, where any threshold number of shares can reconstruct the original secret, but fewer shares reveal nothing about the secret.
