@@ -125,7 +125,7 @@ impl Shamir {
         &self,
         secret: &[u8],
         rng: &mut R,
-    ) -> Result<impl Iterator<Item = Share>> {
+    ) -> Result<impl Iterator<Item = Share> + use<R>> {
         if secret.is_empty() {
             return Err(ShamirError::EmptyInput);
         }
@@ -159,7 +159,7 @@ impl Shamir {
     /// assert_eq!(shares.len(), 5);
     /// ```
     #[cfg(feature = "std")]
-    pub fn split(&self, secret: &[u8]) -> Result<impl Iterator<Item = Share>> {
+    pub fn split(&self, secret: &[u8]) -> Result<impl Iterator<Item = Share> + use<>> {
         let mut rng = rand::thread_rng();
         self.split_with_rng(secret, &mut rng)
     }
